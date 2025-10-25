@@ -1,0 +1,14 @@
+# VS 相关文件
+.vs/
+*.vsidx
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 其他需要忽略的文件
+bin/
+obj/
+.DS_Store
+*.log
+node_modules/
