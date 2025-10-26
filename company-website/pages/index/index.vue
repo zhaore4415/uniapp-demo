@@ -1,0 +1,165 @@
+<!-- src/pages/index/index.vue -->
+
+<template>
+  <view class="container">
+    <!-- 公司信息 -->
+    <view class="section">
+      <text class="title">公司信息</text>
+      <view class="info-item" v-if="company">
+        <text class="label">名称：</text>
+        <text>{{ company.name }}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">地址：</text>
+        <text>{{ company?.address }}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">电话：</text>
+        <text>{{ company?.phone }}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">官网：</text>
+        <text>{{ company?.website }}</text>
+      </view>
+    </view>
+
+    <!-- 产品列表 -->
+    <view class="section">
+      <text class="title">产品列表</text>
+      <view class="product-item" v-for="p in products" :key="p.id">
+        <text>{{ p.name }}</text>
+        <text class="price">¥{{ p.price }}</text>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading" v-if="loading">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 错误提示 -->
+    <view class="error" v-if="error">
+      <text>加载失败：{{ error }}</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+
+// 数据
+const company = ref(null)
+const products = ref([])
+const loading = ref(true)
+const error = ref('')
+
+// API 基地址（关键！）
+const API_BASE = 'https://app.cssao.com'
+//本地http://192.168.1.10:5000
+// 获取公司信息
+const fetchCompanyInfo = () => {
+  uni.request({
+    url: `${API_BASE}/api/company/info`,
+    method: 'GET',
+    success: (res) => {
+      if (res.statusCode === 200) {
+        company.value = res.data
+      } else {
+        error.value = `请求失败：${res.statusCode}`
+      }
+    },
+    fail: (err) => {
+      console.error('请求公司信息失败', err)
+      error.value = '网络错误或跨域问题'
+    }
+  })
+}
+
+// 获取产品列表
+const fetchProducts = () => {
+  uni.request({
+    url: `${API_BASE}/api/company/products`,
+    method: 'GET',
+    success: (res) => {
+      if (res.statusCode === 200) {
+        products.value = res.data
+      } else {
+        error.value = `请求失败：${res.statusCode}`
+      }
+    },
+    fail: (err) => {
+      console.error('请求产品失败', err)
+      error.value = '网络错误或跨域问题'
+    }
+  })
+}
+
+// 页面加载时获取数据
+onMounted(() => {
+  fetchCompanyInfo()
+  fetchProducts()
+  // 模拟加载时间（可选）
+  setTimeout(() => {
+    loading.value = false
+  }, 500)
+})
+</script>
+
+<style>
+.container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f8f8f8;
+}
+
+.section {
+  background-color: white;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.info-item {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.label {
+  font-weight: bold;
+  color: #333;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  color: #333;
+}
+
+.price {
+  color: #d44950;
+  font-weight: bold;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  color: #999;
+}
+
+.error {
+  color: #d44950;
+}
+</style>

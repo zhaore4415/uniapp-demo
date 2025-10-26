@@ -1,4 +1,4 @@
-<script lang="uts">
+<script >
   // #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
   // #endif
