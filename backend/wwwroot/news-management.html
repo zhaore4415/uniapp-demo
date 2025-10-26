@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻管理 - AppDemo后台管理系统</title>
+    <link rel="stylesheet" href="/common/common.css">
+    <style>/* 页面特定样式 */
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e0;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: #f7fafc;
+        }
+
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-published {
+            background-color: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-draft {
+            background-color: #fefcbf;
+            color: #c05621;
+        }
+
+        /* 操作按钮组 */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-edit {
+            background-color: #4299e1;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #3182ce;
+        }
+
+        .btn-delete {
+            background-color: #f56565;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #e53e3e;
+        }
+
+        .btn-publish {
+            background-color: #38a169;
+            color: white;
+        }
+
+        .btn-publish:hover {
+            background-color: #2f855a;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-checkbox {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 5px;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover {
+            background-color: #f7fafc;
+        }
+
+        .page-btn.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .search-input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏将通过JavaScript动态加载 -->
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 顶部导航栏 -->
+        <nav class="top-navbar">
+            <h2 class="page-title">新闻管理</h2>
+            <div class="user-profile">
+                <div class="user-avatar">管</div>
+                <div class="user-info">
+                    <span class="user-name">系统管理员</span>
+                    <span class="user-role">Admin</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <button class="btn btn-primary" id="add-news-btn">
+                <span>➕</span> 添加新闻
+            </button>
+            <button class="btn btn-secondary">
+                <span>📥</span> 导入数据
+            </button>
+            <button class="btn btn-secondary">
+                <span>📤</span> 导出数据
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="data-table">
+            <div class="table-header">
+                <h3 class="table-title">新闻列表</h3>
+                <input type="text" class="search-input" placeholder="搜索新闻标题..." id="search-input">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>标题</th>
+                        <th>作者</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>发布时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="news-list">
+                    <!-- 新闻列表数据将通过JavaScript动态加载 -->
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #718096; padding: 40px;">
+                            正在加载数据...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button class="page-btn">上一页</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">下一页</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 添加/编辑新闻模态框 -->
+    <div class="modal" id="news-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">添加新闻</h3>
+                <button class="modal-close" id="close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="news-form">
+                    <input type="hidden" id="news-id">
+                    <div class="form-group">
+                        <label class="form-label" for="news-title">标题</label>
+                        <input type="text" class="form-input" id="news-title" placeholder="请输入新闻标题" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="news-summary">摘要</label>
+                        <textarea class="form-textarea" id="news-summary" placeholder="请输入新闻摘要"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="news-content">内容</label>
+                        <textarea class="form-textarea" id="news-content" placeholder="请输入新闻内容" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="news-author">作者</label>
+                        <input type="text" class="form-input" id="news-author" placeholder="请输入作者名称">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="news-cover">封面图片URL</label>
+                        <input type="text" class="form-input" id="news-cover" placeholder="请输入封面图片URL">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-check">
+                            <input type="checkbox" class="form-checkbox" id="news-published">
+                            <span>立即发布</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-modal">取消</button>
+                <button class="btn btn-primary" id="save-news">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common/common.js"></script>
+    <script>
+        // 加载新闻列表
+        async function loadNews() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('api/news', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('加载新闻失败');
+                }
+
+                const news = await response.json();
+                renderNewsList(news);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('news-list').innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #e53e3e; padding: 40px;">
+                            加载数据失败，请刷新页面重试
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // 渲染新闻列表
+        function renderNewsList(news) {
+            const newsList = document.getElementById('news-list');
+            if (news.length === 0) {
+                newsList.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #718096; padding: 40px;">
+                            暂无新闻数据
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            newsList.innerHTML = news.map(item => `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.title}</td>
+                    <td>${item.author || '系统管理员'}</td>
+                    <td>
+                        <span class="status-badge ${item.isPublished ? 'status-published' : 'status-draft'}">
+                            ${item.isPublished ? '已发布' : '草稿'}
+                        </span>
+                    </td>
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td>${item.publishedAt ? formatDate(item.publishedAt) : '-'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-edit" onclick="editNews(${item.id})")>编辑</button>
+                            <button class="btn btn-sm ${item.isPublished ? 'btn-secondary' : 'btn-publish'}" onclick="togglePublish(${item.id}, ${!item.isPublished})")>
+                                ${item.isPublished ? '取消发布' : '发布'}
+                            </button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteNews(${item.id})")>删除</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 打开添加新闻模态框
+        function openAddNewsModal() {
+            document.getElementById('modal-title').textContent = '添加新闻';
+            document.getElementById('news-form').reset();
+            document.getElementById('news-id').value = '';
+            document.getElementById('news-modal').style.display = 'flex';
+        }
+
+        // 编辑新闻
+        async function editNews(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`api/news/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('获取新闻详情失败');
+                }
+
+                const news = await response.json();
+                document.getElementById('modal-title').textContent = '编辑新闻';
+                document.getElementById('news-id').value = news.id;
+                document.getElementById('news-title').value = news.title;
+                document.getElementById('news-summary').value = news.summary || '';
+                document.getElementById('news-content').value = news.content;
+                document.getElementById('news-author').value = news.author || '';
+                document.getElementById('news-cover').value = news.coverImage || '';
+                document.getElementById('news-published').checked = news.isPublished;
+                document.getElementById('news-modal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('编辑新闻失败');
+            }
+        }
+
+        // 保存新闻
+        async function saveNews() {
+            const id = document.getElementById('news-id').value;
+            const title = document.getElementById('news-title').value;
+            const summary = document.getElementById('news-summary').value;
+            const content = document.getElementById('news-content').value;
+            const author = document.getElementById('news-author').value;
+            const coverImage = document.getElementById('news-cover').value;
+            const isPublished = document.getElementById('news-published').checked;
+
+            if (!title || !content) {
+                alert('请填写标题和内容');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const newsData = {
+                    title,
+                    summary,
+                    content,
+                    author,
+                    coverImage,
+                    isPublished
+                };
+
+                let response;
+                if (id) {
+                    // 更新新闻
+                    newsData.id = parseInt(id);
+                    response = await fetch(`api/news/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(newsData)
+                    });
+                } else {
+                    // 添加新闻
+                    response = await fetch('api/news', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(newsData)
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error('保存新闻失败');
+                }
+
+                closeModal();
+                loadNews();
+                alert(id ? '新闻更新成功' : '新闻添加成功');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('保存新闻失败');
+            }
+        }
+
+        // 切换发布状态
+        async function togglePublish(id, publish) {
+            if (!confirm(publish ? '确定要发布这篇新闻吗？' : '确定要取消发布这篇新闻吗？')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`api/news/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('获取新闻详情失败');
+                }
+
+                const news = await response.json();
+                news.isPublished = publish;
+
+                const updateResponse = await fetch(`api/news/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(news)
+                });
+
+                if (!updateResponse.ok) {
+                    throw new Error('更新发布状态失败');
+                }
+
+                loadNews();
+                alert(publish ? '新闻发布成功' : '新闻已取消发布');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('操作失败');
+            }
+        }
+
+        // 删除新闻
+        async function deleteNews(id) {
+            if (!confirm('确定要删除这篇新闻吗？此操作不可恢复！')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`api/news/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('删除新闻失败');
+                }
+
+                loadNews();
+                alert('新闻删除成功');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('删除失败');
+            }
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('news-modal').style.display = 'none';
+        }
+
+        // 搜索新闻
+        function searchNews() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#news-list tr');
+            
+            rows.forEach(row => {
+                const title = row.querySelector('td:nth-child(2)');
+                if (title && title.textContent.toLowerCase().includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // 绑定事件
+        document.addEventListener('DOMContentLoaded', function() {
+            initPage();
+            loadNews();
+
+            // 添加新闻按钮
+            document.getElementById('add-news-btn').addEventListener('click', openAddNewsModal);
+            
+            // 关闭模态框
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal').addEventListener('click', closeModal);
+            
+            // 保存新闻
+            document.getElementById('save-news').addEventListener('click', saveNews);
+            
+            // 搜索功能
+            document.getElementById('search-input').addEventListener('input', searchNews);
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('news-modal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
