@@ -15,12 +15,13 @@ namespace backend.Data
         // 添加公司内容表
         public DbSet<CompanyContent> CompanyContents { get; set; }
         
-        // 确保数据库表自动创建
+        // 使用配置文件中的数据库连接字符串
+        // 移除硬编码路径以避免配置冲突
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            optionsBuilder.UseSqlite("Data Source=app.db")
-                         .EnableSensitiveDataLogging();
+            // 保留EnableSensitiveDataLogging以方便开发调试
+            optionsBuilder.EnableSensitiveDataLogging();
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

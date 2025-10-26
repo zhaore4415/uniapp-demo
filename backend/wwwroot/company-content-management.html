@@ -182,19 +182,9 @@
             </div>
         </nav>
         
-        <!-- 权限问题诊断提示 -->
-        <div class="alert alert-info mb-4">
-            <h4>权限问题诊断</h4>
-            <p>如果您遇到401 Unauthorized错误，请：</p>
-            <ul>
-                <li>确保使用管理员账户登录：admin@example.com / Admin@123</li>
-                <li>点击下方按钮查看详细的token诊断信息</li>
-            </ul>
-        </div>
-        <!-- 测试按钮 -->
-        <div style="margin-bottom: 20px;">
-            <button id="test-api-button" class="btn btn-secondary">测试API调用并查看token诊断</button>
-        </div>
+
+        
+
 
         <!-- 内容卡片列表 -->
         <div class="content-cards" id="content-cards">
@@ -247,38 +237,25 @@
 
         // 加载所有公司内容 - 这个端点是公开的，不需要认证
         async function loadCompanyContents() {
-            console.log('开始加载公司内容...');
             try {
                 // 使用完整的相对路径，确保请求正确发送
-                console.log('请求URL:', '/api/companycontent');
                 
-                // 添加超时处理
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
-                
+                // 移除超时处理以避免预览环境中的问题
                 const response = await fetch('/api/companycontent', {
                     method: 'GET',
-                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
-                
-                clearTimeout(timeoutId); // 清除超时定时器
-                
-                console.log('响应状态:', response.status);
-                console.log('响应状态文本:', response.statusText);
 
                 if (!response.ok) {
                     // 先读取响应体为文本，然后尝试解析为JSON
                     // 这样只读取一次响应体，避免"body stream already read"错误
                     const errorText = await response.text();
-                    console.log('错误文本:', errorText);
                     
                     // 尝试将文本解析为JSON
                     try {
                         const errorData = JSON.parse(errorText);
-                        console.log('错误数据(JSON):', errorData);
                         throw new Error(`加载内容失败: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
                     } catch (e) {
                         // 如果不是有效的JSON，直接使用文本
@@ -287,11 +264,8 @@
                 }
 
                 const contents = await response.json();
-                console.log('成功加载内容:', contents);
                 renderContentCards(contents);
             } catch (error) {
-                console.error('加载内容时发生错误:', error);
-                console.error('错误详情:', error.stack);
                 
                 // 根据错误类型显示不同的提示
                 let errorMessage = '加载数据失败，请刷新页面重试';
@@ -354,9 +328,6 @@
                 // 只有在token存在时添加Authorization头
                 if (token) {
                     requestOptions.headers['Authorization'] = `Bearer ${token}`;
-                    console.log('已添加Authorization头');
-                } else {
-                    console.log('未添加Authorization头，因为token不存在');
                 }
                 
                 // 使用完整的相对路径
@@ -374,7 +345,6 @@
                 const content = await response.json();
                 showEditor(content);
             } catch (error) {
-                console.error('Error:', error);
                 alert('编辑内容失败');
             }
         }
@@ -441,23 +411,9 @@
                 // 详细记录token获取过程
                 const localStorageToken = localStorage.getItem('token');
                 const sessionStorageToken = sessionStorage.getItem('token');
-                console.log('localStorage中的token:', localStorageToken ? '存在 (长度:' + localStorageToken.length + ')' : '不存在');
-                console.log('sessionStorage中的token:', sessionStorageToken ? '存在 (长度:' + sessionStorageToken.length + ')' : '不存在');
-                
-                // 检查token格式
-                if (localStorageToken) {
-                    console.log('localStorage token前30个字符:', localStorageToken.substring(0, 30) + '...');
-                }
-                if (sessionStorageToken) {
-                    console.log('sessionStorage token前30个字符:', sessionStorageToken.substring(0, 30) + '...');
-                }
                 
                 // 同时检查localStorage和sessionStorage中的token，与common.js保持一致
                 const token = localStorageToken || sessionStorageToken;
-                console.log('最终使用的token:', token ? '已获取' : '未获取');
-                if (!token) {
-                    console.log('提示：请使用管理员账户登录（admin@example.com / Admin@123）');
-                }
                 
                 const contentData = {
                     key,
@@ -466,9 +422,6 @@
                     description,
                     keywords
                 };
-                
-                console.log('发送的数据:', contentData);
-                console.log('请求URL:', `/api/companycontent/${key}`);
                 
                 // 准备请求选项
                 const requestOptions = {
@@ -482,22 +435,14 @@
                 // 只有在token存在时添加Authorization头
                 if (token) {
                     requestOptions.headers['Authorization'] = `Bearer ${token}`;
-                    console.log('已添加Authorization头');
-                } else {
-                    console.log('未添加Authorization头，因为token不存在');
                 }
-                
-                console.log('请求选项:', requestOptions);
 
                 // 使用完整的相对路径
                 const response = await fetch(`/api/companycontent/${key}`, requestOptions);
 
                 if (!response.ok) {
-                    console.log('响应状态:', response.status);
-                    console.log('响应状态文本:', response.statusText);
                     // 尝试获取详细错误信息
                     const errorText = await response.text();
-                    console.log('错误响应内容:', errorText);
                     throw new Error(`保存内容失败: ${response.status} ${response.statusText}. 详情: ${errorText}`);
                 }
 
@@ -509,98 +454,11 @@
                 loadCompanyContents();
                 alert('内容保存成功');
             } catch (error) {
-                console.error('保存内容时发生错误:', error);
-                console.error('错误详情:', error.stack);
                 alert('保存内容失败: ' + error.message);
             }
         }
         
-        // 测试API调用函数
-        async function testApiCall() {
-            console.log('开始测试API调用...');
-            const testKey = 'about';
-            
-            try {
-                // 详细记录token获取过程
-                const localStorageToken = localStorage.getItem('token');
-                const sessionStorageToken = sessionStorage.getItem('token');
-                console.log('测试 - localStorage中的token:', localStorageToken ? '存在 (长度:' + localStorageToken.length + ')' : '不存在');
-                console.log('测试 - sessionStorage中的token:', sessionStorageToken ? '存在 (长度:' + sessionStorageToken.length + ')' : '不存在');
-                
-                // 检查token格式
-                if (localStorageToken) {
-                    console.log('测试 - localStorage token前30个字符:', localStorageToken.substring(0, 30) + '...');
-                }
-                if (sessionStorageToken) {
-                    console.log('测试 - sessionStorage token前30个字符:', sessionStorageToken.substring(0, 30) + '...');
-                }
-                
-                const token = localStorageToken || sessionStorageToken;
-                console.log('测试 - 使用的token:', token ? '已获取' : '未获取');
-                
-                // 准备请求选项
-                const requestOptions = {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        key: testKey,
-                        title: '测试标题',
-                        content: '测试内容',
-                        description: '测试描述',
-                        keywords: '测试,关键词'
-                    })
-                };
-                
-                // 只有在token存在时添加Authorization头
-                if (token) {
-                    requestOptions.headers['Authorization'] = `Bearer ${token}`;
-                    console.log('测试 - 已添加Authorization头，格式: Bearer [token]');
-                } else {
-                    console.log('测试 - 未添加Authorization头，因为token不存在');
-                    console.log('测试 - 提示：请使用管理员账户登录（admin@example.com / Admin@123）');
-                }
-                
-                console.log('测试 - 请求URL:', `/api/companycontent/${testKey}`);
-                console.log('测试 - 请求选项(隐藏token):', {
-                    method: requestOptions.method,
-                    headers: {
-                        'Content-Type': requestOptions.headers['Content-Type'],
-                        'Authorization': requestOptions.headers['Authorization'] ? 'Bearer [token]' : '不存在'
-                    },
-                    body: 'JSON数据'
-                });
-                
-                // 发送请求
-                const response = await fetch(`/api/companycontent/${testKey}`, requestOptions);
-                console.log('测试 - 响应状态:', response.status);
-                console.log('测试 - 响应状态文本:', response.statusText);
-                
-                // 先读取响应体为文本，然后尝试解析为JSON
-                // 这样只读取一次响应体，避免"body stream already read"错误
-                const responseText = await response.text();
-                console.log('测试 - 响应文本:', responseText);
-                
-                // 尝试将文本解析为JSON
-                try {
-                    const responseData = JSON.parse(responseText);
-                    console.log('测试 - 响应数据(JSON):', responseData);
-                } catch (e) {
-                    console.log('测试 - 响应不是有效的JSON格式');
-                }
-                
-                if (response.ok) {
-                    alert('API调用测试成功!');
-                } else {
-                    alert(`API调用测试失败: ${response.status} ${response.statusText}`);
-                }
-            } catch (error) {
-                console.error('测试API调用时发生错误:', error);
-                console.error('测试错误详情:', error.stack);
-                alert('测试失败: ' + error.message);
-            }
-        }
+
 
         // 删除内容
         async function deleteContent() {
@@ -623,9 +481,6 @@
                 // 只有在token存在时添加Authorization头
                 if (token) {
                     requestOptions.headers['Authorization'] = `Bearer ${token}`;
-                    console.log('已添加Authorization头');
-                } else {
-                    console.log('未添加Authorization头，因为token不存在');
                 }
                 
                 // 使用完整的相对路径
@@ -643,7 +498,6 @@
                 loadCompanyContents();
                 alert('内容删除成功');
             } catch (error) {
-                console.error('Error:', error);
                 alert('删除内容失败');
             }
         }
@@ -681,14 +535,11 @@
                 let token = null;
                 try {
                     token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                    console.log(token);
                 } catch (storageError) {
-                    console.log('无法访问存储:', storageError);
                     return null;
                 }
                 
                 if (!token) {
-                    console.log('未找到登录token');
                     return null;
                 }
                 
@@ -700,7 +551,6 @@
                 
                 const tokenParts = token.split('.');
                 if (tokenParts.length !== 3) {
-                    console.log('token格式不正确，显示权限提示');
                     return null; // 非JWT格式，显示权限提示
                 }
                 
@@ -724,14 +574,11 @@
                         roles = [roles];
                     }
                     
-                    console.log('当前用户角色:', roles);
                     return roles;
                 } catch (parseError) {
-                    console.log('无法解析token payload，显示权限提示');
                     return null; // 解析失败，显示权限提示
                 }
             } catch (error) {
-                console.log('角色检查过程中发生错误:', error);
                 return null;
             }
         }
@@ -781,8 +628,7 @@
             // 取消编辑
             document.getElementById('cancel-edit').addEventListener('click', cancelEdit);
             
-            // 测试API调用
-            document.getElementById('test-api-button').addEventListener('click', testApiCall);
+
         });
     </script>
 </body>

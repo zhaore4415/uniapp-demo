@@ -1,6 +1,6 @@
 // 加载公共侧边栏（使用内联HTML避免fetch请求）
 function loadSidebar() {
-    console.log('开始加载侧边栏，当前路径:', window.location.pathname);
+    
     try {
         // 直接使用内联的侧边栏HTML内容
         const sidebarHtml = `
@@ -80,14 +80,13 @@ function loadSidebar() {
         // 将侧边栏插入到页面中
         const body = document.querySelector('body');
         if (body) {
-            console.log('找到body元素，准备插入侧边栏');
+            
             body.insertAdjacentHTML('afterbegin', sidebarHtml);
             
             // 根据当前页面设置活动菜单项
             setActiveMenuItem();
-            console.log('侧边栏插入完成');
+            
         } else {
-            console.error('未找到body元素');
         }
     } catch (error) {
         console.error('加载侧边栏失败:', error);
