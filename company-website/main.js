@@ -12,6 +12,7 @@ if (process.env.UNI_PLATFORM === 'app' || process.env.UNI_PLATFORM.startsWith('m
 }
 
 import App from './App'
+import { reportError } from './utils/error-reporter.js'
 
 // #ifndef VUE3
 import Vue from 'vue'
@@ -28,6 +29,10 @@ app.$mount()
 import { createSSRApp } from 'vue'
 export function createApp() {
   const app = createSSRApp(App)
+  // 组件渲染 / 生命周期异常统一上报（不改变现有渲染行为）
+  app.config.errorHandler = (err, instance, info) => {
+    reportError('组件渲染', err, info)
+  }
   return {
     app
   }

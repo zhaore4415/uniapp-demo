@@ -1,4 +1,5 @@
 using backend.Data;
+using backend.Middleware;
 using backend.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -96,7 +97,28 @@ using (var scope = app.Services.CreateScope())
     // 首先创建数据库和表结构
     var context = services.GetRequiredService<ApplicationDbContext>();
     context.Database.EnsureCreated();
-    
+
+    // 补建日志表：EnsureCreated 对已存在的库不会补建新表，
+    // 因此用幂等 DDL 补建；不删除、不重建任何现有表，保留 app.db 既有数据（D1）。
+    try
+    {
+        context.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS Logs (
+    Id        INTEGER NOT NULL CONSTRAINT PK_Logs PRIMARY KEY AUTOINCREMENT,
+    CreatedAt TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    Type      TEXT    NOT NULL,
+    Username  TEXT    NOT NULL DEFAULT 'anonymous',
+    Success   INTEGER NOT NULL,
+    Message   TEXT    NULL
+);");
+        context.Database.ExecuteSqlRaw(@"CREATE INDEX IF NOT EXISTS IX_Logs_CreatedAt ON Logs (CreatedAt);");
+    }
+    catch (System.Exception ex)
+    {
+        // 日志是可观测性附加能力，不应成为启动单点故障（D13）
+        services.GetRequiredService<ILogger<Program>>()
+                .LogError(ex, "创建 Logs 表失败，日志功能将不可用（不影响其它接口）");
+    }
+
     // 然后执行数据初始化
     try
     {
@@ -111,6 +133,9 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while initializing the database.");
     }
 }
+
+// 异常日志中间件必须最靠前，才能兜住后续所有中间件与控制器的未处理异常
+app.UseMiddleware<ExceptionLoggingMiddleware>();
 
 // 启用静态文件中间件
 app.UseStaticFiles();

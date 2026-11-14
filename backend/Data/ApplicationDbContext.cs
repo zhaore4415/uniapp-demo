@@ -14,6 +14,9 @@ namespace backend.Data
         
         // 添加公司内容表
         public DbSet<CompanyContent> CompanyContents { get; set; }
+
+        // 添加日志表
+        public DbSet<LogEntry> Logs { get; set; }
         
         // 使用配置文件中的数据库连接字符串
         // 移除硬编码路径以避免配置冲突
@@ -38,6 +41,16 @@ namespace backend.Data
             builder.Entity<CompanyContent>().Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             // 确保Key字段唯一
             builder.Entity<CompanyContent>().HasIndex(c => c.Key).IsUnique();
+
+            // 配置LogEntry实体（索引名与 Program.cs 中的幂等 DDL 保持一致）
+            builder.Entity<LogEntry>(e =>
+            {
+                e.Property(l => l.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                e.Property(l => l.Type).HasMaxLength(20).IsRequired();
+                e.Property(l => l.Username).HasMaxLength(256).IsRequired().HasDefaultValue("anonymous");
+                e.Property(l => l.Message).HasMaxLength(4000);
+                e.HasIndex(l => l.CreatedAt).HasDatabaseName("IX_Logs_CreatedAt");
+            });
         }
     }
 }
