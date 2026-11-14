@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.Models;
+using backend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,17 +24,20 @@ namespace backend.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            ILogger<AuthController> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _configuration = configuration;
             _context = context;
+            _logger = logger;
         }
 
         // 注册新用户
@@ -42,6 +46,7 @@ namespace backend.Controllers
         {
             if (!ModelState.IsValid)
             {
+                await WriteLogAsync("注册", model?.Username, false, "请求参数校验失败");
                 return BadRequest(ModelState);
             }
 
@@ -49,6 +54,7 @@ namespace backend.Controllers
             var userExists = await _userManager.FindByEmailAsync(model.Email);
             if (userExists != null)
             {
+                await WriteLogAsync("注册", model.Username, false, "该邮箱已被注册");
                 return BadRequest(new { Message = "该邮箱已被注册" });
             }
 
@@ -56,6 +62,7 @@ namespace backend.Controllers
             userExists = await _userManager.FindByNameAsync(model.Username);
             if (userExists != null)
             {
+                await WriteLogAsync("注册", model.Username, false, "该用户名已被使用");
                 return BadRequest(new { Message = "该用户名已被使用" });
             }
 
@@ -72,6 +79,9 @@ namespace backend.Controllers
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
             {
+                // 仅使用 Identity 的策略描述文案，绝不拼接密码/哈希/请求体（D10）
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                await WriteLogAsync("注册", model.Username, false, "用户创建失败: " + errors);
                 return BadRequest(new { Message = "用户创建失败", Errors = result.Errors.Select(e => e.Description) });
             }
 
@@ -83,6 +93,7 @@ namespace backend.Controllers
 
             await _userManager.AddToRoleAsync(user, "User");
 
+            await WriteLogAsync("注册", model.Username, true, "用户注册成功");
             return Ok(new { Message = "用户注册成功", UserId = user.Id });
         }
 
@@ -92,6 +103,7 @@ namespace backend.Controllers
         {
             if (!ModelState.IsValid)
             {
+                await WriteLogAsync("登录", model?.Username, false, "请求参数校验失败");
                 return BadRequest(ModelState);
             }
 
@@ -102,6 +114,7 @@ namespace backend.Controllers
                 user = await _userManager.FindByEmailAsync(model.Username);
                 if (user == null)
                 {
+                    await WriteLogAsync("登录", model.Username, false, "用户不存在");
                     return Unauthorized(new { Message = "用户名或密码错误" });
                 }
             }
@@ -109,6 +122,7 @@ namespace backend.Controllers
             // 验证密码
             if (!await _userManager.CheckPasswordAsync(user, model.Password))
             {
+                await WriteLogAsync("登录", model.Username, false, "密码错误");
                 return Unauthorized(new { Message = "用户名或密码错误" });
             }
 
@@ -135,6 +149,8 @@ namespace backend.Controllers
 
             // 生成JWT令牌
             var token = GenerateToken(authClaims);
+
+            await WriteLogAsync("登录", user.UserName, true, "登录成功");
 
             return Ok(new
             {
@@ -254,6 +270,34 @@ namespace backend.Controllers
             }
 
             return Ok(new { Message = "密码修改成功" });
+        }
+
+        // 写业务日志：任何失败只记 ILogger，绝不影响接口状态码与响应体（4.3）
+        private async Task WriteLogAsync(string type, string? username, bool success, string message)
+        {
+            LogEntry? entry = null;
+            try
+            {
+                entry = new LogEntry
+                {
+                    CreatedAt = DateTime.Now,
+                    Type = LogText.Truncate(type, LogText.MaxTypeLength),
+                    Username = LogText.NormalizeUsername(username),
+                    Success = success,
+                    Message = LogText.Truncate(message, LogText.MaxMessageLength)
+                };
+                _context.Logs.Add(entry);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "写入{LogType}日志失败", type);
+                // 失败的实体不留在跟踪器里，避免污染同一请求后续的 SaveChanges
+                if (entry != null)
+                {
+                    _context.Entry(entry).State = EntityState.Detached;
+                }
+            }
         }
 
         // 生成JWT令牌的私有方法

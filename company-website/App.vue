@@ -1,8 +1,13 @@
 <script >
+  import { reportError } from './utils/error-reporter.js'
   // #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
   // #endif
 	export default {
+		// App 级未捕获异常（脚本错误、未处理的异步异常），统一上报
+		onError: function (error) {
+			reportError('App', error)
+		},
 		onLaunch: function () {
 			console.log('App Launch')
 		},
